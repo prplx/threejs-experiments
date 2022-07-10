@@ -8,7 +8,12 @@ interface IApp {
 }
 
 export default class App implements IApp {
-  private size = { width: 0, height: 0 }
+  private sizes = { width: 0, height: 0 }
+  private colors = {
+    mesh: 0xff0000,
+    ambientLight: 0x222222,
+    pointLight: 0xffffff,
+  }
   private background = new T.Color('rgb(38, 38, 38)')
   private renderer: T.WebGLRenderer
   private controls: OrbitControls
@@ -25,7 +30,7 @@ export default class App implements IApp {
     this.group = new T.Group()
     this.camera = new T.PerspectiveCamera(
       40,
-      this.size.width / this.size.height,
+      this.sizes.width / this.sizes.height,
       1,
       1000
     )
@@ -35,10 +40,9 @@ export default class App implements IApp {
     this.mesh = new T.Mesh(
       new T.BoxBufferGeometry(1, 1, 1),
       new T.MeshStandardMaterial({
-        color: 'red',
+        color: this.colors.mesh,
         opacity: 0.5,
         transparent: true,
-        // wireframe: true,
       })
     )
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -51,13 +55,13 @@ export default class App implements IApp {
     this.controls.maxDistance = 5
     this.controls.rotateSpeed = 2
     this.controls.enablePan = false
-    this.controls.update()
     this.controls.enableDamping = true
+    this.controls.update()
     this.group.add(this.mesh)
     this.scene.background = this.background
     this.scene.add(this.group).add(this.camera).add(this.axesHelper)
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    this.renderer.setSize(this.size.width, this.size.height)
+    this.renderer.setSize(this.sizes.width, this.sizes.height)
 
     this.setupLighting()
     this.setupDatGui()
@@ -76,9 +80,9 @@ export default class App implements IApp {
 
   private onWindowResize = () => {
     this.resetSizes()
-    this.camera.aspect = this.size.width / this.size.height
+    this.camera.aspect = this.sizes.width / this.sizes.height
     this.camera.updateProjectionMatrix()
-    this.renderer.setSize(this.size.width, this.size.height)
+    this.renderer.setSize(this.sizes.width, this.sizes.height)
   }
 
   private onDoubleClick = () => {
@@ -94,12 +98,12 @@ export default class App implements IApp {
   }
 
   private resetSizes() {
-    this.size = { width: window.innerWidth, height: window.innerHeight }
+    this.sizes = { width: window.innerWidth, height: window.innerHeight }
   }
 
   private setupLighting() {
-    this.scene.add(new T.AmbientLight(0x222222))
-    this.camera.add(new T.PointLight(0xffffff, 1))
+    this.scene.add(new T.AmbientLight(this.colors.ambientLight))
+    this.camera.add(new T.PointLight(this.colors.pointLight, 1))
   }
 
   private setupEventListeners() {
@@ -109,6 +113,15 @@ export default class App implements IApp {
 
   private setupDatGui() {
     const gui = new dat.GUI()
+
+    gui.add(this.mesh.position, 'y', -2, 2, 0.01)
+    gui.add(this.mesh.material, 'wireframe')
+    gui.add(this.mesh.material, 'opacity', 0, 1, 0.01)
+    gui
+      .addColor(this.colors, 'mesh')
+      .name('Mesh color')
+      // @ts-ignore
+      .onChange(() => this.mesh.material.color.set(this.colors.mesh))
   }
 
   render(): void {
