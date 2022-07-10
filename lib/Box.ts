@@ -2,12 +2,9 @@ import * as T from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import gsap from 'gsap'
 import * as dat from 'dat.gui'
+import pebblesTexture from 'lib/textures/Pebbles_024_BaseColor.jpeg'
 
-interface IApp {
-  render(): void
-}
-
-export default class App implements IApp {
+export default class Box implements IApp {
   private sizes = { width: 0, height: 0 }
   private colors = {
     mesh: 0xff0000,
@@ -23,6 +20,8 @@ export default class App implements IApp {
   private mesh: T.Mesh
   private axesHelper: T.AxesHelper
   private clock: T.Clock
+  private loadingManager: T.LoadingManager
+  private textureLoader: T.TextureLoader
 
   constructor(public container: HTMLElement = document.body) {
     this.resetSizes()
@@ -37,10 +36,12 @@ export default class App implements IApp {
     this.renderer = new T.WebGLRenderer({
       antialias: true,
     })
+    this.loadingManager = new T.LoadingManager()
+    this.textureLoader = new T.TextureLoader(this.loadingManager)
     this.mesh = new T.Mesh(
       new T.BoxBufferGeometry(1, 1, 1),
       new T.MeshStandardMaterial({
-        color: this.colors.mesh,
+        map: this.textureLoader.load(pebblesTexture.src),
         opacity: 0.5,
         transparent: true,
       })
@@ -48,7 +49,6 @@ export default class App implements IApp {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.clock = new T.Clock()
     this.axesHelper = new T.AxesHelper(0)
-
     this.camera.position.set(1, 1, 6)
     this.controls.maxPolarAngle = Math.PI
     this.controls.minDistance = 5
@@ -68,7 +68,7 @@ export default class App implements IApp {
     this.setupEventListeners()
   }
 
-  private animate = (): void => {
+  private animate = () => {
     requestAnimationFrame(this.animate)
 
     this.group.rotation.y += 0.01
