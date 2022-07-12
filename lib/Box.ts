@@ -2,7 +2,12 @@ import * as T from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import gsap from 'gsap'
 import * as dat from 'dat.gui'
-import pebblesTexture from 'lib/textures/Pebbles_024_BaseColor.jpeg'
+import envTexture1 from 'lib/textures/px.jpg'
+import envTexture2 from 'lib/textures/nx.jpg'
+import envTexture3 from 'lib/textures/py.jpg'
+import envTexture4 from 'lib/textures/ny.jpg'
+import envTexture5 from 'lib/textures/pz.jpg'
+import envTexture6 from 'lib/textures/nz.jpg'
 
 export default class Box implements IApp {
   private sizes = { width: 0, height: 0 }
@@ -18,10 +23,13 @@ export default class Box implements IApp {
   private group: T.Group
   private camera: T.PerspectiveCamera
   private mesh: T.Mesh
+  private geometry: T.BufferGeometry
+  private material: T.Material
   private axesHelper: T.AxesHelper
   private clock: T.Clock
   private loadingManager: T.LoadingManager
   private textureLoader: T.TextureLoader
+  private cubeTextureLoader: T.CubeTextureLoader
 
   constructor(public container: HTMLElement = document.body) {
     this.resetSizes()
@@ -38,14 +46,24 @@ export default class Box implements IApp {
     })
     this.loadingManager = new T.LoadingManager()
     this.textureLoader = new T.TextureLoader(this.loadingManager)
-    this.mesh = new T.Mesh(
-      new T.BoxBufferGeometry(1, 1, 1),
-      new T.MeshStandardMaterial({
-        map: this.textureLoader.load(pebblesTexture.src),
-        opacity: 0.5,
-        transparent: true,
-      })
-    )
+    this.cubeTextureLoader = new T.CubeTextureLoader()
+    this.geometry = new T.BoxBufferGeometry()
+    this.material = new T.MeshStandardMaterial({
+      metalness: 0.5,
+      roughness: 0.05,
+      envMap: this.cubeTextureLoader.load([
+        envTexture1.src,
+        envTexture2.src,
+        envTexture3.src,
+        envTexture4.src,
+        envTexture5.src,
+        envTexture6.src,
+      ]),
+      color: this.colors.mesh,
+      opacity: 1,
+      transparent: true,
+    })
+    this.mesh = new T.Mesh(this.geometry, this.material)
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.clock = new T.Clock()
     this.axesHelper = new T.AxesHelper(0)
@@ -102,8 +120,13 @@ export default class Box implements IApp {
   }
 
   private setupLighting() {
-    this.scene.add(new T.AmbientLight(this.colors.ambientLight))
-    this.camera.add(new T.PointLight(this.colors.pointLight, 1))
+    const ambientLight = new T.AmbientLight(0xffffff, 0.5)
+    const pointLight = new T.PointLight(0xffffff, 0.5)
+    pointLight.position.x = 2
+    pointLight.position.y = 3
+    pointLight.position.z = 4
+    this.scene.add(ambientLight)
+    this.scene.add(pointLight)
   }
 
   private setupEventListeners() {
@@ -122,6 +145,8 @@ export default class Box implements IApp {
       .name('Mesh color')
       // @ts-ignore
       .onChange(() => this.mesh.material.color.set(this.colors.mesh))
+    gui.add(this.material, 'metalness').min(0).max(1).step(0.0001)
+    gui.add(this.material, 'roughness').min(0).max(1).step(0.0001)
   }
 
   render(): void {
