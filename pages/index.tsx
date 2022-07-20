@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import { useEffect } from 'react'
-import App from '@lib/Text'
+import App from '@lib/Lights'
 
 const Home: NextPage = () => {
   useEffect(() => {
