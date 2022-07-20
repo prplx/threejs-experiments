@@ -3,13 +3,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { FontLoader, Font } from 'three/examples/jsm/loaders/FontLoader'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry'
 import gsap from 'gsap'
-import * as dat from 'dat.gui'
-import envTexture1 from 'lib/textures/px.jpg'
-import envTexture2 from 'lib/textures/nx.jpg'
-import envTexture3 from 'lib/textures/py.jpg'
-import envTexture4 from 'lib/textures/ny.jpg'
-import envTexture5 from 'lib/textures/pz.jpg'
-import envTexture6 from 'lib/textures/nz.jpg'
+import matcap from 'lib/textures/8.png'
+import { TextureLoader } from 'three'
 
 export default class Text implements IApp {
   private sizes = { width: 0, height: 0 }
@@ -26,12 +21,13 @@ export default class Text implements IApp {
   private camera: T.PerspectiveCamera
   private mesh?: T.Mesh
   private geometry?: TextGeometry
-  private material: T.Material
+  private material?: T.Material
   private axesHelper: T.AxesHelper
   private clock: T.Clock
   private loadingManager: T.LoadingManager
   private cubeTextureLoader: T.CubeTextureLoader
   private fontLoader: FontLoader
+  private textureLoader?: T.TextureLoader
 
   constructor(public container: HTMLElement = document.body) {
     this.resetSizes()
@@ -61,31 +57,34 @@ export default class Text implements IApp {
         bevelSize: 0.02,
         bevelSegments: 4,
       })
-      this.geometry.computeBoundingBox()
-      this.geometry.translate(
-        -this.geometry.boundingBox!.max.x * 0.5,
-        -this.geometry.boundingBox!.max.y * 0.5,
-        -this.geometry.boundingBox!.max.z * 0.5
-      )
+      this.geometry.center()
+      this.textureLoader = new TextureLoader()
+      const matcapTexture = this.textureLoader.load(matcap.src)
+
+      this.material = new T.MeshMatcapMaterial({
+        matcap: matcapTexture,
+      })
       this.mesh = new T.Mesh(this.geometry, this.material)
+
+      const donutGeometry = new T.TorusBufferGeometry(0.3, 0.2, 20, 45)
+
+      for (let i = 0; i < 100; i++) {
+        const donut = new T.Mesh(donutGeometry, this.material)
+        const scale = Math.random()
+
+        donut.position.x = (Math.random() - 0.5) * 10
+        donut.position.y = (Math.random() - 0.5) * 10
+        donut.position.z = (Math.random() - 0.5) * 10
+        donut.rotation.x = Math.random() * Math.PI
+        donut.rotation.y = Math.random() * Math.PI
+        donut.scale.set(scale, scale, scale)
+        this.scene.add(donut)
+      }
+
       this.group.add(this.mesh)
       this.scene.add(this.group).add(this.camera).add(this.axesHelper)
     })
-    this.material = new T.MeshStandardMaterial({
-      metalness: 0.5,
-      roughness: 0.05,
-      envMap: this.cubeTextureLoader.load([
-        envTexture1.src,
-        envTexture2.src,
-        envTexture3.src,
-        envTexture4.src,
-        envTexture5.src,
-        envTexture6.src,
-      ]),
-      color: this.colors.mesh,
-      opacity: 1,
-      transparent: true,
-    })
+
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.clock = new T.Clock()
     this.axesHelper = new T.AxesHelper(0)
@@ -102,7 +101,6 @@ export default class Text implements IApp {
     this.renderer.setSize(this.sizes.width, this.sizes.height)
 
     this.setupLighting()
-    // this.setupDatGui()
     this.setupEventListeners()
   }
 
